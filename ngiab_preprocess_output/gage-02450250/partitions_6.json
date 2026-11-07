@@ -1,0 +1,27 @@
+{
+    "partitions":[
+        {"id":0,
+        "cat-ids":["cat-486443", "cat-486425", "cat-486181", "cat-486441", "cat-486424", "cat-486182"],
+        "nex-ids":["nex-486442", "nex-486181", "nex-486182", "nex-486183"],
+        "remote-connections":[{"mpi-rank": 1, "nex-id": "nex-486442", "cat-id": "cat-486442", "cat-direction": "nex-to-dest_cat"}, {"mpi-rank": 3, "nex-id": "nex-486181", "cat-id": "cat-486180", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 3, "nex-id": "nex-486181", "cat-id": "cat-486440", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 1, "nex-id": "nex-486181", "cat-id": "cat-486442", "cat-direction": "orig_cat-to-nex"}]}, 
+        {"id":1,
+        "cat-ids":["cat-486447", "cat-486444", "cat-486449", "cat-486448", "cat-486442"],
+        "nex-ids":["nex-486445", "nex-486440", "nex-486442", "nex-486181"],
+        "remote-connections":[{"mpi-rank": 2, "nex-id": "nex-486445", "cat-id": "cat-486445", "cat-direction": "nex-to-dest_cat"}, {"mpi-rank": 0, "nex-id": "nex-486442", "cat-id": "cat-486443", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 3, "nex-id": "nex-486440", "cat-id": "cat-486440", "cat-direction": "nex-to-dest_cat"}, {"mpi-rank": 0, "nex-id": "nex-486181", "cat-id": "cat-486181", "cat-direction": "nex-to-dest_cat"}]}, 
+        {"id":2,
+        "cat-ids":["cat-486438", "cat-486437", "cat-486450", "cat-486446", "cat-486445"],
+        "nex-ids":["nex-486439", "nex-486438", "nex-486440", "nex-486445", "nex-486446"],
+        "remote-connections":[{"mpi-rank": 1, "nex-id": "nex-486445", "cat-id": "cat-486447", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 3, "nex-id": "nex-486440", "cat-id": "cat-486440", "cat-direction": "nex-to-dest_cat"}, {"mpi-rank": 3, "nex-id": "nex-486439", "cat-id": "cat-486439", "cat-direction": "nex-to-dest_cat"}]}, 
+        {"id":3,
+        "cat-ids":["cat-486429", "cat-486430", "cat-486440", "cat-486180", "cat-486439"],
+        "nex-ids":["nex-486180", "nex-486181", "nex-486439", "nex-486440"],
+        "remote-connections":[{"mpi-rank": 2, "nex-id": "nex-486440", "cat-id": "cat-486446", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 1, "nex-id": "nex-486440", "cat-id": "cat-486444", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 1, "nex-id": "nex-486440", "cat-id": "cat-486449", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 1, "nex-id": "nex-486440", "cat-id": "cat-486448", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 2, "nex-id": "nex-486439", "cat-id": "cat-486438", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 2, "nex-id": "nex-486439", "cat-id": "cat-486450", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 0, "nex-id": "nex-486181", "cat-id": "cat-486181", "cat-direction": "nex-to-dest_cat"}, {"mpi-rank": 5, "nex-id": "nex-486180", "cat-id": "cat-486179", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 5, "nex-id": "nex-486180", "cat-id": "cat-486433", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 4, "nex-id": "nex-486180", "cat-id": "cat-486431", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 4, "nex-id": "nex-486180", "cat-id": "cat-486426", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 4, "nex-id": "nex-486180", "cat-id": "cat-486428", "cat-direction": "orig_cat-to-nex"}]}, 
+        {"id":4,
+        "cat-ids":["cat-486434", "cat-486435", "cat-486431", "cat-486426", "cat-486428"],
+        "nex-ids":["nex-486433", "nex-486434", "nex-486180"],
+        "remote-connections":[{"mpi-rank": 5, "nex-id": "nex-486433", "cat-id": "cat-486433", "cat-direction": "nex-to-dest_cat"}, {"mpi-rank": 3, "nex-id": "nex-486180", "cat-id": "cat-486180", "cat-direction": "nex-to-dest_cat"}]}, 
+        {"id":5,
+        "cat-ids":["cat-486179", "cat-486427", "cat-486432", "cat-486433", "cat-486436"],
+        "nex-ids":["nex-486180", "nex-486179", "nex-486433", "nex-486432"],
+        "remote-connections":[{"mpi-rank": 4, "nex-id": "nex-486433", "cat-id": "cat-486434", "cat-direction": "orig_cat-to-nex"}, {"mpi-rank": 3, "nex-id": "nex-486180", "cat-id": "cat-486180", "cat-direction": "nex-to-dest_cat"}]}    ]
+}

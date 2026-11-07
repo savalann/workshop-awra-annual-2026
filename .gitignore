@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+.ipynb_checkpoints/
+
+# My folders
+
+temp/
+.Trash-1000/
+.ngiab/
+figures/

@@ -1,0 +1,17 @@
+time_step: "1 hour"
+area_sqkm: 10.333980375300227 # areasqkm
+basin_id: cat-486445
+basin_name: cat-486445
+elev_mean: 260.0894272434703 # mean.elevation
+initial_state: zero
+lat: 34.38972711203628 # needs calulating
+lon: -87.40368552973688 # needs calulating
+slope_mean: 83.98639039311385 # mean.slope
+train_cfg_file:
+  - /ngen/ngen/extern/lstm/trained_neuralhydrology_models/nh_AORC_hourly_25yr_1210_112435_7/config.yml
+  - /ngen/ngen/extern/lstm/trained_neuralhydrology_models/nh_AORC_hourly_25yr_1210_112435_8/config.yml
+  - /ngen/ngen/extern/lstm/trained_neuralhydrology_models/nh_AORC_hourly_25yr_1210_112435_9/config.yml
+  - /ngen/ngen/extern/lstm/trained_neuralhydrology_models/nh_AORC_hourly_25yr_seq999_seed101_0701_143442/config.yml
+  - /ngen/ngen/extern/lstm/trained_neuralhydrology_models/nh_AORC_hourly_25yr_seq999_seed103_2701_171540/config.yml
+  - /ngen/ngen/extern/lstm/trained_neuralhydrology_models/nh_AORC_hourly_slope_elev_precip_temp_seq999_seed101_2801_191806/config.yml
+verbose: 0
