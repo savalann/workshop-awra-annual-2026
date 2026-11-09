@@ -1,7 +1,6 @@
 """Plotting functions used by the NextGen Data Preparation notebook.
 
-Each function makes one figure, saves it in the `figures` folder next to the
-notebooks and shows it in the notebook.
+Each function makes one figure and shows it in the notebook.
 """
 
 import geopandas as gpd
@@ -24,10 +23,11 @@ from .forcings_utils import (
     make_mean_annual_map,
     process_time_series,
 )
-from .workshop_paths import DATA_DIR, FIGURES_DIR, WORKSHOP_DIR
+from .workshop_paths import DATA_DIR, WORKSHOP_DIR
 
 # Daily Observed (USGS), NWM and NextGen flows (m^3/s), stored next to the notebooks
 DAILY_FLOWS_PARQUET = WORKSHOP_DIR / "data" / "daily_flows.parquet"
+HOURLY_FLOW_PARQUET = WORKSHOP_DIR / "data" / "usgs_hourly_02450250.parquet"  # USGS 15-min data averaged to hours (UTC)
 
 # Variables whose cumulative / annual values are precipitation depths (mm)
 PRECIP_VARIABLES = ["precip_rate", "apcp_surface", "precipitation", "precip"]
@@ -60,9 +60,6 @@ def plot_hourly_series(forcings_path, gpkg_path, var_name):
     plt.title(f"Hourly {get_var_full_name(var_name)}", pad=14)
     _format_time_axis(plt.gca(), series.index)
 
-    output_path = f"{FIGURES_DIR}/hourly_{var_name}.png"
-    plt.savefig(output_path, dpi=200)
-    print("Saved plot to:", output_path)
     plt.show()
 
 
@@ -85,9 +82,6 @@ def plot_cumulative_series(forcings_path, gpkg_path, var_name):
     plt.xlabel("Date/Time", labelpad=10)
     _format_time_axis(plt.gca(), cum_series.index)
 
-    output_path = f"{FIGURES_DIR}/cumulative_{var_name}.png"
-    plt.savefig(output_path, dpi=200)
-    print("Saved cumulative plot to:", output_path)
     plt.show()
 
 
@@ -145,9 +139,6 @@ def plot_mean_annual_basin_map(forcings_path, gpkg_path, var_name):
     ax.set_axis_off()
     fig.tight_layout()
 
-    output_path = f"{FIGURES_DIR}/mean_annual_{var_name}.png"
-    fig.savefig(output_path, dpi=200, bbox_inches="tight", facecolor="white")
-    print("Saved PNG map to:", output_path)
     plt.show()
 
 
@@ -158,31 +149,25 @@ def plot_raw_gridded_map(hydrofabric_id, var_name):
 
     fig, _, _ = make_mean_annual_map(nc_path, gpkg_path, var_name)
 
-    output_path = f"{FIGURES_DIR}/mean_annual_raw_gridded_{var_name}.png"
-    fig.savefig(output_path, dpi=200, bbox_inches="tight", facecolor="white")
-    print("Saved PNG map to:", output_path)
     plt.show()
 
 
 def plot_streamflow_series(start_date, end_date):
-    """Plot the daily USGS observed streamflow from daily_flows.parquet for a period."""
-    flows = pd.read_parquet(DAILY_FLOWS_PARQUET)
+    """Plot the hourly USGS observed streamflow (UTC) from usgs_hourly_02450250.parquet for a period."""
+    flows = pd.read_parquet(HOURLY_FLOW_PARQUET)
     flows["date"] = pd.to_datetime(flows["date"])
     observed = flows.set_index("date").sort_index()["Observed"].loc[start_date:end_date]
     if observed.empty:
-        raise ValueError(f"No streamflow in daily_flows.parquet between {start_date} and {end_date}.")
+        raise ValueError(f"No streamflow in {HOURLY_FLOW_PARQUET.name} between {start_date} and {end_date}.")
 
     plt.figure(figsize=(12, 6))
     plt.plot(observed.index, observed.values, linewidth=1.4, label="USGS observed")
-    plt.xlabel("Date", labelpad=10)
+    plt.xlabel("Date (UTC)", labelpad=10)
     plt.ylabel("Streamflow (m³/s)", labelpad=10)
-    plt.title(f"Daily USGS Streamflow ({start_date} to {end_date})", pad=14)
+    plt.title(f"Hourly USGS Streamflow ({start_date} to {end_date})", pad=14)
     plt.legend()
     _format_time_axis(plt.gca(), observed.index)
 
-    output_path = f"{FIGURES_DIR}/streamflow_{start_date}_{end_date}.png"
-    plt.savefig(output_path, dpi=200)
-    print("Saved plot to:", output_path)
     plt.show()
 
 
@@ -334,7 +319,4 @@ def plot_teehr_streamflow(ev, usgs_gage, nwm_feature_id, ngen_id):
     plt.legend(frameon=False)
     plt.tight_layout()
 
-    output_path = f"{FIGURES_DIR}/streamflow_comparison.png"
-    plt.savefig(output_path, dpi=200)
-    print("Saved plot to:", output_path)
     plt.show()

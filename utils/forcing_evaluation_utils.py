@@ -88,7 +88,7 @@ def load_data(data_dir, start, end):
 
 # ---------------------------------------------------------------- Step 3
 
-def plot_map(data_dir, info, gauges, basin_id, basin_name, fig_dir):
+def plot_map(data_dir, info, gauges, basin_id, basin_name):
     """Map of the basin, its streams, the search buffer and the hourly gauges."""
     basin = gpd.read_file(data_dir / "basin.geojson")
     states = gpd.read_file(f"zip://{(data_dir / 'states.zip').resolve()}")
@@ -112,7 +112,6 @@ def plot_map(data_dir, info, gauges, basin_id, basin_name, fig_dir):
                                    markeredgecolor="black", label="rain gauge")],
                loc="lower center", fontsize=8, frameon=False)
     fig.tight_layout(rect=(0, 0.06, 1, 1))
-    fig.savefig(fig_dir / f"{basin_id}_map.png", dpi=170)
     plt.show()
 
 
@@ -192,8 +191,7 @@ def hourly_scores(selected, clean, hourly, products, label, networks_used_by, we
 
 # ---------------------------------------------------------------- Step 6: figures
 
-def plot_cumulative_rainfall(hourly_at, main, products, label, colour, networks_used_by, basin_id, basin_name,
-                             fig_dir):
+def plot_cumulative_rainfall(hourly_at, main, products, label, colour, networks_used_by, basin_id, basin_name):
     """Figure 1: cumulative rainfall at the main gauge."""
     both = hourly_at[main.id]
     fig, ax = plt.subplots(figsize=(9, 4.5))
@@ -209,11 +207,10 @@ def plot_cumulative_rainfall(hourly_at, main, products, label, colour, networks_
     ax.legend(frameon=False, fontsize=8)
     ax.grid(color="#e5e5e5", linewidth=0.6)
     fig.tight_layout()
-    fig.savefig(fig_dir / f"{basin_id}_cumulative_rainfall.png", dpi=170)
     plt.show()
 
 
-def plot_hourly_scatter(hourly_at, main, score_table, products, label, colour, basin_id, fig_dir):
+def plot_hourly_scatter(hourly_at, main, score_table, products, label, colour, basin_id):
     """Figure 2: hourly scatter at the main gauge (rainy hours only; the many dry hours would all sit at 0, 0)."""
     both = hourly_at[main.id]
     rainy = both[(both[["gauge"] + products] > 0.1).any(axis=1)]
@@ -229,34 +226,44 @@ def plot_hourly_scatter(hourly_at, main, score_table, products, label, colour, b
         ax.set(xlim=(0, top), ylim=(0, top), xlabel=f"{main.network} gauge {main.id}, hourly (mm)",
                ylabel=f"{label[p]}, hourly (mm)")
     fig.tight_layout()
-    fig.savefig(fig_dir / f"{basin_id}_hourly_scatter.png", dpi=170)
     plt.show()
 
 
-def plot_kge_by_gauge(selected, score_table, products, label, colour, networks_used_by, basin_id, fig_dir):
-    """Figure 3: hourly KGE of each product at each gauge."""
-    fig, ax = plt.subplots(figsize=(7, 1.9 + 0.6 * len(selected)))
-    for y, g in enumerate(selected.itertuples()):
-        for p in products:
+def plot_kge_by_gauge(selected, score_table, products, label, colour, networks_used_by, basin_id):
+    """Figure 3: hourly KGE of each product at each gauge, as horizontal bars (hollow = not independent)."""
+    import numpy as np
+    gauges = list(selected.itertuples())
+    y = np.arange(len(gauges))
+    height = 0.8 / len(products)
+    fig, ax = plt.subplots(figsize=(8, 1.2 + 1.2 * len(gauges)))
+    for k, p in enumerate(products):
+        for i, g in enumerate(gauges):
             kge = score_table[(score_table["gauge"] == g.id) & (score_table["product"] == label[p])]["KGE"]
+            if kge.empty:
+                continue
+            value = kge.iloc[0]
             ok = independent(p, g.network, networks_used_by)
-            ax.scatter(kge, [y] * len(kge), s=70, zorder=3, color=colour[p] if ok else "white",
-                       edgecolor="black" if ok else colour[p], linewidth=0.5 if ok else 2)
-    ax.set_yticks(range(len(selected)), [f"{g.network} {g.id}" for g in selected.itertuples()], fontsize=8)
-    ax.set_ylim(len(selected) - 0.5, -0.5)
-    ax.grid(axis="x", color="#e5e5e5", linewidth=0.6)
-    ax.set_xlabel("hourly KGE (1 = perfect)")
-    legend = [plt.Line2D([], [], marker="o", linestyle="", color=colour[p], markeredgecolor="black", label=label[p])
-              for p in products]
-    legend.append(plt.Line2D([], [], marker="o", linestyle="", color="white", markeredgecolor="grey",
-                             markeredgewidth=2, label="not independent (product may contain this gauge)"))
-    fig.legend(handles=legend, fontsize=7, frameon=False, loc="lower center", ncol=3)
-    fig.tight_layout(rect=(0, 0.12, 1, 1))
-    fig.savefig(fig_dir / f"{basin_id}_hourly_kge_by_gauge.png", dpi=170)
+            ypos = y[i] + (k - (len(products) - 1) / 2) * height
+            ax.barh(ypos, value, height * 0.9, color=colour[p] if ok else "white",
+                    edgecolor=colour[p], linewidth=0 if ok else 2, hatch=None if ok else "//")
+            # product name next to its value on the first gauge (instead of a legend)
+            text = f"{label[p]}  {value:.2f}" if i == 0 else f"{value:.2f}"
+            ax.text(value + 0.01, ypos, text, va="center", ha="left", fontsize=9, color=colour[p])
+    ax.set_yticks(y, [f"{g.network} {g.id}" for g in gauges], fontsize=8)
+    ax.set_ylim(len(gauges) - 0.5, -0.5)
+    ax.set_xlim(min(0, ax.get_xlim()[0]), 1.15)
+    ax.axvline(0, color="black", linewidth=0.6)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.tick_params(direction="in")
+    ax.set_xlabel("hourly KGE")
+    hollow = plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="grey", hatch="//", linewidth=2,
+                           label="not independent (product may contain this gauge)")
+    ax.legend(handles=[hollow], fontsize=8, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.2))
+    fig.tight_layout()
     plt.show()
 
 
-def plot_wettest_storm(hourly_at, main, products, label, colour, basin_id, fig_dir, day=None):
+def plot_wettest_storm(hourly_at, main, products, label, colour, basin_id, day=None):
     """Figure 4: the wettest day at the main gauge (or the day you give, e.g. pd.Timestamp("2020-04-12")), hour by hour."""
     both = hourly_at[main.id]
     if day is None:
@@ -274,11 +281,10 @@ def plot_wettest_storm(hourly_at, main, products, label, colour, basin_id, fig_d
     ax.legend(frameon=False, fontsize=8)
     fig.autofmt_xdate()
     fig.tight_layout()
-    fig.savefig(fig_dir / f"{basin_id}_wettest_storm.png", dpi=170)
     plt.show()
 
 
-def plot_kge_per_year(hourly_at, main, products, label, colour, basin_id, fig_dir):
+def plot_kge_per_year(hourly_at, main, products, label, colour, basin_id):
     """Figure 5: hourly KGE in each year at the main gauge (a year needs at least half a year of hours)."""
     both = hourly_at[main.id]
     year_of = (both.index - pd.Timedelta(hours=1)).year
@@ -287,12 +293,11 @@ def plot_kge_per_year(hourly_at, main, products, label, colour, basin_id, fig_di
     fig, ax = plt.subplots(figsize=(9, 3.8))
     for p in products:
         ax.plot(yearly_kge.index, yearly_kge[label[p]], marker="o", color=colour[p], linewidth=1.5, label=label[p])
-    ax.set_ylabel("hourly KGE (1 = perfect)")
+    ax.set_ylabel("hourly KGE")
     ax.set_title(f"{main.network} gauge {main.id}: hourly KGE per year", fontsize=10)
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
     ax.grid(color="#e5e5e5", linewidth=0.6)
     ax.legend(frameon=False, fontsize=8)
     fig.tight_layout()
-    fig.savefig(fig_dir / f"{basin_id}_hourly_kge_per_year.png", dpi=170)
     plt.show()
     return yearly_kge

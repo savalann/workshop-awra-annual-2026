@@ -171,3 +171,36 @@ def get_simulation_start_end_time(folder_to_eval):
     start = realization["time"]["start_time"]
     end = realization["time"]["end_time"]
     return start, end
+
+def show_model_setup(data_dir):
+    """Print the main settings of a NextGen run: model, period, time step, forcing, routing and LSTM inputs."""
+    import json
+    import glob
+    from pathlib import Path
+
+    import yaml
+
+    data_dir = Path(data_dir)
+    real = json.load(open(data_dir / "config" / "realization.json"))
+    form = real["global"]["formulations"][0]["params"]
+    module = form["modules"][0]["params"]
+    cat_files = sorted(glob.glob(str(data_dir / "config" / "cat_config" / "lstm" / "*.yml")))
+    cat = yaml.safe_load(open(cat_files[0])) if cat_files else {}
+
+    print("NextGen run setup")
+    print("-" * 60)
+    print(f"Model                 : {form['model_type_name'].upper()} ({module['model_type_name']}, "
+          f"{len(cat.get('train_cfg_file', []))} trained LSTMs averaged)")
+    print(f"Catchments            : {len(cat_files)} (one model config per catchment)")
+    print(f"Period                : {real['time']['start_time']}  to  {real['time']['end_time']}")
+    print(f"Time step             : {cat.get('time_step', '?')} (output every {real['time']['output_interval'] // 60} min)")
+    print(f"Forcing file          : {real['global']['forcing']['path']}")
+    print(f"Model output          : {form['main_output_variable']} (runoff depth per catchment)")
+    print(f"Routing (t-route)     : {real['routing']['t_route_config_file_with_path']}")
+    print(f"Output folder         : {real['output_root']}")
+    if cat:
+        print("-" * 60)
+        print(f"Example catchment     : {cat['basin_id']}")
+        print(f"  area                : {cat['area_sqkm']:.2f} km²")
+        print(f"  mean elevation      : {cat['elev_mean']:.0f} m")
+        print(f"  mean slope          : {cat['slope_mean']:.1f}")

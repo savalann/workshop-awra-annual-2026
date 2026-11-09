@@ -132,33 +132,36 @@ def period_metrics(flows, start, end):
 
 
 def plot_metrics_bars(metrics, title="Model performance against USGS observations"):
-    """Horizontal bar chart of a metrics table: one panel per metric, one bar per model."""
+    """Horizontal bar chart of a metrics table: one panel per metric, one bar per model.
+
+    Same style as the KGE-by-gauge plot in notebook 02: no top/right border, ticks inside, no grid,
+    and the model names written next to their bars in the first panel instead of a legend.
+    """
     models = [col.replace(" vs Observed", "") for col in metrics.columns]
     colors = MODEL_COLORS[:len(models)]
     y = np.arange(len(models))
 
     fig, axes = plt.subplots(2, 3, figsize=(14, 2.2 + 1.1 * len(models)))
-    for ax, metric in zip(axes.flat, METRICS):
+    for k, (ax, metric) in enumerate(zip(axes.flat, METRICS)):
         values = metrics.loc[metric].to_numpy(dtype=float)
-        ax.barh(y, values, color=colors, height=0.6, edgecolor="white", linewidth=2)
-        ax.axvline(0, color="#888888", linewidth=0.8)
-        ax.axvline(METRIC_BEST[metric], color="#444444", linewidth=1, linestyle="--")
-        ax.set_yticks(y)
-        ax.set_yticklabels(models)
-        ax.invert_yaxis()
+        ax.barh(y, values, color=colors, height=0.7)
+        ax.axvline(0, color="black", linewidth=0.6)
+        ax.set_yticks(y, [])
+        ax.set_ylim(len(models) - 0.5, -0.5)
         ax.set_title(f"{METRIC_LABELS.get(metric, metric)}  (best = {METRIC_BEST[metric]})", fontsize=11)
-        ax.grid(axis="x", alpha=0.3)
         ax.spines[["top", "right"]].set_visible(False)
+        ax.tick_params(direction="in")
 
-        # Leave room on both sides so the value labels fit
-        low, high = min(0, np.nanmin(values), METRIC_BEST[metric]), max(0, np.nanmax(values), METRIC_BEST[metric])
-        pad = 0.25 * (high - low or 1)
+        # Leave room on both sides so the labels fit (more room in the first panel for the names)
+        low, high = min(0, np.nanmin(values)), max(0, np.nanmax(values))
+        pad = (0.9 if k == 0 else 0.3) * (high - low or 1)
         ax.set_xlim(low - (pad if low < 0 else 0), high + pad)
-        for yi, v in zip(y, values):
+        for yi, v, name, color in zip(y, values, models, colors):
+            text = f"{name}  {v:.2f}" if k == 0 else f"{v:.2f}"
             if np.isfinite(v):
-                ax.text(v, yi, f" {v:.2f} ", va="center", ha="left" if v >= 0 else "right", fontsize=9, color="#222222")
+                ax.text(v, yi, f" {text} ", va="center", ha="left" if v >= 0 else "right", fontsize=9, color=color)
             else:  # the model has no flow in this period
-                ax.text(0, yi, " no data", va="center", ha="left", fontsize=9, color="#888888")
+                ax.text(0, yi, f" {name if k == 0 else ''} no data", va="center", ha="left", fontsize=9, color="#888888")
 
     fig.suptitle(title, fontsize=13)
     fig.tight_layout()
@@ -294,3 +297,72 @@ def event_metrics(flows, event):
     """Metrics of every model against Observed during one event (start to end)."""
     window = flows.loc[pd.Timestamp(event["start"]):pd.Timestamp(event["end"])]
     return metrics_table(window)
+
+
+def plot_drought_events(drought_events):
+    """Timeline of the drought events in each series: one row per series, one bar per event.
+
+    Bar colour gets darker with severity (mean % below the threshold); the number of events is on the right.
+    """
+    from matplotlib.colors import to_rgb
+
+    names = list(drought_events)
+    colors = {name: ("#222222" if name == OBSERVED else MODEL_COLORS[(i - 1) % len(MODEL_COLORS)])
+              for i, name in enumerate(names)}
+    fig, ax = plt.subplots(figsize=(14, 1.0 + 0.7 * len(names)))
+    for row, name in enumerate(names):
+        events = drought_events[name]
+        base = np.array(to_rgb(colors[name]))
+        for ev in events.itertuples():
+            # light (mild) to full colour (severe)
+            strength = 0.35 + 0.65 * min(max(ev.severity_pct, 0), 100) / 100
+            colour = 1 - strength * (1 - base)
+            start = pd.Timestamp(ev.start)
+            width = pd.Timestamp(ev.end) - start + pd.Timedelta(days=1)
+            ax.barh(row, width, left=start, height=0.6, color=colour, edgecolor=colors[name], linewidth=0.5)
+        ax.text(1.005, row, f"{len(events)} events", transform=ax.get_yaxis_transform(),
+                va="center", ha="left", fontsize=9, color=colors[name])
+    ax.set_yticks(range(len(names)), names)
+    ax.set_ylim(len(names) - 0.5, -0.5)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.tick_params(direction="in")
+    ax.set_xlabel("Date")
+    ax.set_title("Drought events in each series (darker = more severe)")
+    fig.tight_layout()
+    plt.show()
+
+
+def plot_drought_summary(summary):
+    """Bars of number of events, longest event and most severe event: Observed and each model.
+
+    Same style as the other bar plots: no top/right border, ticks inside, no grid,
+    names next to the bars in the first panel instead of a legend.
+    """
+    names = [c for c in summary.columns if " - " not in c]          # Observed and the models
+    colors = ["#222222" if n == OBSERVED else MODEL_COLORS[(i - 1) % len(MODEL_COLORS)]
+              for i, n in enumerate(names)]
+    panels = [("n_events", "Number of events", "{:.0f}"),
+              ("duration_max_days", "Longest event (days)", "{:.0f}"),
+              ("severity_max_pct", "Most severe event (% below threshold)", "{:.1f}")]
+    y = np.arange(len(names))
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 1.2 + 0.8 * len(names)))
+    for k, (ax, (row, title, fmt)) in enumerate(zip(axes, panels)):
+        values = summary.loc[row, names].to_numpy(dtype=float)
+        ax.barh(y, np.nan_to_num(values), color=colors, height=0.7)
+        ax.axvline(0, color="black", linewidth=0.6)
+        ax.set_yticks(y, [])
+        ax.set_ylim(len(names) - 0.5, -0.5)
+        ax.set_title(title, fontsize=11)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.tick_params(direction="in")
+        high = np.nanmax(values) if np.isfinite(values).any() else 1
+        ax.set_xlim(0, high * (1.9 if k == 0 else 1.3))
+        for yi, v, name, color in zip(y, values, names, colors):
+            value = fmt.format(v) if np.isfinite(v) else "no events"
+            text = f"{name}  {value}" if k == 0 else value
+            ax.text(v if np.isfinite(v) else 0, yi, f" {text}", va="center", ha="left", fontsize=9, color=color)
+
+    fig.suptitle("Drought events: models vs. USGS observations", fontsize=13)
+    fig.tight_layout()
+    plt.show()
